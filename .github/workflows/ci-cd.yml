@@ -1,0 +1,34 @@
+
+
+
+
+name: DevOps Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+    
+    - name: Install dependencies
+      run: cd src/backend && npm install
+    
+    - name: Run tests
+      run: cd src/backend && npm test
+    
+    - name: Build Docker images
+      run: docker-compose build
+  
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: docker-compose up -d

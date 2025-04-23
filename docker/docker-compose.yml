@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./src/frontend:/usr/share/nginx/html
+    depends_on:
+      - backend
+
+  backend:
+    build: ./src/backend
+    ports:
+      - "3000:3000"
