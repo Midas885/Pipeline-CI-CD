@@ -1,0 +1,7 @@
+
+
+
+exclude:
+  - src/backend/node_modules/
+  - src/backend/package.json
+  - src/backend/package-lock.json

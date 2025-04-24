@@ -4,31 +4,53 @@
 
 name: DevOps Pipeline
 
-on: [push, pull_request]
+on: 
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     
     - name: Set up Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: '20'
+        cache: 'npm'
     
     - name: Install dependencies
-      run: cd src/backend && npm install
-    
+      working-directory: ./src/backend
+      run: npm ci --no-audit
+      
     - name: Run tests
-      run: cd src/backend && npm test
+      working-directory: ./src/backend
+      run: npm test -- --ci --coverage
     
     - name: Build Docker images
-      run: docker-compose build
-  
+      run: |
+        docker-compose -f docker-compose.yml -f monitoring/docker-compose-monitoring.yml build
+      env:
+        CI: true
+
   deploy:
     needs: build-and-test
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - run: docker-compose up -d
+    - uses: actions/checkout@v4
+    
+    - name: Login to Docker Hub
+      if: github.ref == 'refs/heads/main'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+    
+    - name: Deploy containers
+      run: |
+        docker-compose -f docker-compose.yml -f monitoring/docker-compose-monitoring.yml up -d
+        docker ps
